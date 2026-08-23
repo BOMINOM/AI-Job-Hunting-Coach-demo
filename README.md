@@ -3,7 +3,7 @@
 > 一款面向求职者的个人求职管理与面试训练工具。覆盖「投递追踪 → 面试准备 → 真实复盘 → 数据洞察」全流程，帮你把碎片化的求职过程变成可管理、可复盘、可优化的个人资产。  
 > 纯前端单文件应用，数据默认存在你本机浏览器，支持通过 GitHub Gist 实现多端同步。
 
-在线预览：<https://bominom.github.io/AI-Job-Hunting-Coach/>
+在线预览：<https://bominom.github.io/AI-Job-Hunting-Coach-demo/>
 
 ## ✨ 功能模块
 
