@@ -3224,16 +3224,21 @@ function topWeak(n){ return Object.entries(weakCounts()).sort((a,b)=>b[1]-a[1]).
 function download(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 // 重渲染前记录滚动位置，渲染后还原，避免卡片收起/删除导致下方内容（如面试锦囊）被顶进视口
 function preserveScroll(fn){ const x=window.scrollX, y=window.scrollY; try{ fn(); }finally{ window.scrollTo(x,y); } }
-/* 保存/收起前，记录刚编辑卡片标题的绝对页面坐标；重渲染后直接回到该标题。 */
-function keepItemAnchor(containerId, id, fn){
-  const before = document.querySelector('#'+containerId+' .story-card[data-id="'+id+'"]');
-  const title = before ? (before.querySelector('.sc-title-input, .sc-title') || before) : null;
-  const targetTop = title
-    ? Math.max(0, window.scrollY + title.getBoundingClientRect().top - 110)
-    : window.scrollY;
-  fn();
-  window.scrollTo({top:targetTop, behavior:'auto'});
+/* 展开或收起后，主动把刚操作的卡片标题带回视野顶部；多次执行以覆盖 textarea 撑高后的浏览器自动滚动。 */
+function pinStoryCard(containerId, id){
+  const pin=()=>{
+    const card=document.querySelector('#'+containerId+' .story-card[data-id="'+id+'"]');
+    if(!card) return;
+    const title=card.querySelector('.sc-title-input, .sc-title') || card;
+    const ta=card.querySelector('textarea');
+    if(ta) ta.scrollTop=0; // 长答案永远从第一行开始阅读
+    const top=Math.max(0, window.scrollY + title.getBoundingClientRect().top - 110);
+    window.scrollTo({top, behavior:'auto'});
+  };
+  requestAnimationFrame(()=>{ pin(); requestAnimationFrame(pin); });
+  setTimeout(pin,100);
 }
+function keepItemAnchor(containerId, id, fn){ fn(); pinStoryCard(containerId, id); }
 
 /* ============ 行为面试题库 ============ */
 let expandedBrainId=null;
@@ -3266,7 +3271,7 @@ function renderBrainBank(){
     if(ta) setTimeout(()=>autoResize(ta),0);
   }
 }
-function expandBrain(id){ expandedBrainId=id; renderBrainBank(); }
+function expandBrain(id){ expandedBrainId=id; renderBrainBank(); pinStoryCard('brainBank', id); }
 function collapseBrain(){ const id=expandedBrainId; saveBrain(id); keepItemAnchor('brainBank', id, ()=>{ expandedBrainId=null; renderBrainBank(); }); }
 function saveBrain(qid){ const q=brainQ.find(x=>x.id==qid); if(!q) return; const t=$('qTitle'+qid); if(t) q.q=t.value.trim(); const v=$('ans'+qid); if(v) q.ans=v.value.trim(); saveBrainLS(); }
 function saveAns(qid){ saveBrain(qid); }
@@ -4393,7 +4398,7 @@ function renderStarList(){
     if(ta) setTimeout(()=>autoResize(ta),0);
   }
 }
-function expandStar(id){ expandedStarId=id; renderStarList(); }
+function expandStar(id){ expandedStarId=id; renderStarList(); pinStoryCard('starList', id); }
 function collapseStar(){ const id=expandedStarId; saveStar(id); keepItemAnchor('starList', id, ()=>{ expandedStarId=null; renderStarList(); }); }
 function addStar(){ const v=$('starTitle').value.trim(); if(!v){ toast('请输入经历标题'); return; } const id=++starSeq; starStories.push({id, title:v, story:''}); $('starTitle').value=''; expandedStarId=id; renderStarList(); saveStarLS(); }
 function saveStar(id){ const s=starStories.find(x=>x.id==id); if(!s) return; const t=$('starTitle'+id); if(t) s.title=t.value.trim(); const v=$('star'+id); if(v) s.story=v.value; saveStarLS(); }
